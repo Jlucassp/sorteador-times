@@ -180,6 +180,7 @@
                                 Primária</label>
                             <select id="player-position" required
                                 class="mt-1 h-10 md:h-auto px-3 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-[16px] md:text-sm">
+                                <option value="DEF">Defensor (DEF)</option>
                                 <option value="MEI">Meio-Campo (MEI)</option>
                                 <option value="ATA">Atacante (ATA)</option>
                             </select>
@@ -1136,29 +1137,6 @@
                 makeTeamsSortable();
                 addAiButtonListeners();
                 renderBalanceMetrics();
-
-                teamsContainer.addEventListener('click', (e) => {
-                    const goalBtn = e.target.closest('.btn-goal');
-                    const assistBtn = e.target.closest('.btn-assist');
-                    if (!goalBtn && !assistBtn) return;
-
-                    // Se mexer nos times por drag and drop, garantimos que existe racha
-                    ensureRacha();
-
-                    const pid = parseInt((goalBtn || assistBtn).getAttribute('data-pid'));
-                    const stats = getPlayerStats(currentRachaId, pid);
-
-                    if (goalBtn) stats.goals = (stats.goals || 0) + 1;
-                    if (assistBtn) stats.assists = (stats.assists || 0) + 1;
-
-                    setPlayerStats(currentRachaId, pid, stats);
-
-                    // Atualiza contadores visuais sem re-render completo
-                    const gEl = document.getElementById(`g-${pid}`);
-                    const aEl = document.getElementById(`a-${pid}`);
-                    if (gEl) gEl.textContent = stats.goals || 0;
-                    if (aEl) aEl.textContent = stats.assists || 0;
-                });
             };
 
             const makeTeamsSortable = () => {
@@ -1600,6 +1578,28 @@
                     }
                 });
             }
+
+            function onTeamsClick(e) {
+                const goalBtn = e.target.closest('.btn-goal');
+                const assistBtn = e.target.closest('.btn-assist');
+                if (!goalBtn && !assistBtn) return;
+
+                ensureRacha();
+
+                const pid = parseInt((goalBtn || assistBtn).dataset.pid, 10);
+                const stats = getPlayerStats(currentRachaId, pid);
+
+                if (goalBtn) stats.goals = (stats.goals || 0) + 1;
+                if (assistBtn) stats.assists = (stats.assists || 0) + 1;
+
+                setPlayerStats(currentRachaId, pid, stats);
+
+                const gEl = document.getElementById(`g-${pid}`);
+                const aEl = document.getElementById(`a-${pid}`);
+                if (gEl) gEl.textContent = stats.goals || 0;
+                if (aEl) aEl.textContent = stats.assists || 0;
+            }
+            teamsContainer.addEventListener('click', onTeamsClick);
 
             // Initial Load
             players = JSON.parse(localStorage.getItem('masterPlayers')) || [];
