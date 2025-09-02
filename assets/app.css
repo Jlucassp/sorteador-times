@@ -1,0 +1,464 @@
+/* =========================
+   Design System (Paleta + Componentes)
+   ========================= */
+:root {
+    /* Paleta — neutro sofisticado com azul como acento */
+    --bg: #f6f7f9;
+    /* neutro do app */
+    --surface: #ffffff;
+    /* cartas e inputs */
+    --stroke: #e6e9ef;
+    /* bordas suaves */
+    --shadow: 0 10px 24px -16px rgba(16, 24, 40, .25), 0 4px 10px -6px rgba(16, 24, 40, .08);
+
+    --text: #0f172a;
+    /* título */
+    --muted: #475569;
+    /* textos secundários */
+    --subtle: #64748b;
+    /* descrições/labels */
+
+    --primary: #1d4ed8;
+    /* azul 700 */
+    --primary-600: #2563eb;
+    /* hover */
+    --ring: rgba(37, 99, 235, .28);
+
+    --ok: #16a34a;
+    /* verde */
+    --warn: #d97706;
+    /* amber */
+    --danger: #ef4444;
+    /* vermelho */
+}
+
+/* base */
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    background: var(--bg);
+    color: var(--text);
+}
+
+/* fundo com textura sutil (profissional) */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background:
+        radial-gradient(900px 480px at -10% -20%, rgba(29, 78, 216, .06), transparent 60%),
+        radial-gradient(700px 360px at 110% -10%, rgba(29, 78, 216, .05), transparent 55%);
+}
+
+/* container */
+.app-container {
+    max-width: 1120px;
+}
+
+/* títulos */
+.app-title {
+    font-weight: 800;
+    letter-spacing: -.02em;
+    background: linear-gradient(90deg, #0f172a, #334155);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.app-subtitle {
+    color: var(--subtle);
+}
+
+/* cards */
+.card {
+    background: var(--surface);
+    border: 1px solid var(--stroke);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: .5rem;
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.section-desc {
+    color: var(--subtle);
+    font-size: .9rem;
+}
+
+.team-card {
+    border-radius: 14px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 12px 26px -20px rgba(16, 24, 40, .35), 0 8px 18px -16px rgba(16, 24, 40, .12);
+}
+
+.player-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 8px 10px;
+}
+
+.player-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    color: #111827;
+    font-weight: 600;
+}
+
+.player-name .pos {
+    margin-left: 6px;
+    font-weight: 600;
+    font-size: 11px;
+    color: #374151;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    padding: 2px 6px;
+    border-radius: 999px;
+}
+
+.player-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.counter {
+    font-size: 11px;
+    min-width: 22px;
+    text-align: center;
+    color: #111827;
+}
+
+.badge-soft {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.badge-ok {
+    background: #ecfdf5;
+    color: #065f46;
+    border-color: #a7f3d0;
+}
+
+.badge-warn {
+    background: #fffbeb;
+    color: #92400e;
+    border-color: #fde68a;
+}
+
+/* grid dos times: 1 / 2 / 4 colunas */
+#teams-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+}
+
+@media (min-width: 768px) {
+    #teams-container {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (min-width: 1280px) {
+    #teams-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+
+/* inputs */
+input,
+select,
+textarea {
+    font-size: 16px;
+    /* iOS anti-zoom */
+    background: #fff;
+    border: 1px solid var(--stroke);
+    border-radius: 12px;
+    padding: .6rem .75rem;
+    transition: border-color .2s ease, box-shadow .2s ease;
+    box-shadow: 0 1px 0 rgba(17, 24, 39, .02) inset;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--primary-600);
+    box-shadow: 0 0 0 4px var(--ring);
+}
+
+label {
+    color: var(--subtle);
+    font-weight: 500;
+}
+
+/* botões */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    padding: 0 14px;
+    border-radius: 10px;
+    font-weight: 600;
+    line-height: 1;
+    border: 1px solid transparent;
+    transition: transform .03s ease, box-shadow .18s ease;
+    background: #fff;
+    color: #111827;
+}
+
+.btn:active {
+    transform: translateY(1px);
+}
+
+.btn:hover {
+    box-shadow: 0 6px 18px -12px rgba(16, 24, 40, .28);
+}
+
+.btn:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: #1e40af;
+    color: #fff;
+    border-color: #1e40af;
+}
+
+.btn-primary:hover {
+    box-shadow: 0 10px 24px -14px rgba(30, 64, 175, .7);
+}
+
+.btn-primary.ring-2 {
+    transition: box-shadow .2s;
+}
+
+.btn-secondary {
+    background: #f3f4f6;
+    color: #111827;
+    border-color: #e5e7eb;
+}
+
+.btn-secondary:hover {
+    background: #e5e7eb;
+}
+
+.btn-danger {
+    background: #fee2e2;
+    color: #b91c1c;
+    border-color: #fecaca;
+}
+
+.btn-danger:hover {
+    background: #fecaca;
+}
+
+/* —— TOOLBAR (racha) —————————————————————————— */
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 12px;
+    align-items: center;
+}
+
+.toolbar__left {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 8px;
+    align-items: center;
+}
+
+.toolbar__right {
+    margin-left: auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+/* “Mostrar notas” compacto */
+.toolbar .inline-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #374151;
+}
+
+/* listas de jogadores + chips */
+.player-item {
+    border: 1px solid var(--stroke);
+    border-radius: 12px;
+    padding: .6rem .7rem;
+    background: #fff;
+    transition: border-color .15s ease, box-shadow .15s ease, transform .04s ease;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: none;
+}
+
+.player-item:hover {
+    border-color: #dfe4ec;
+    box-shadow: 0 8px 18px -16px rgba(16, 24, 40, .25);
+}
+
+.player-item:active {
+    cursor: grabbing;
+    transform: translateY(1px);
+}
+
+/* Fantasma visível durante o arrasto */
+.sortable-ghost {
+    opacity: .5;
+    transform: scale(.98);
+}
+
+.badge {
+    display: inline-block;
+    font-size: 11px;
+    line-height: 1;
+    padding: .28rem .5rem;
+    border-radius: 999px;
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+}
+
+.badge--ok {
+    background: #ecfdf5;
+    color: #065f46;
+    border-color: #a7f3d0;
+}
+
+.badge--warn {
+    background: #fffbeb;
+    color: #92400e;
+    border-color: #fde68a;
+}
+
+/* +G / +A */
+.btn-ga {
+    border-radius: 999px;
+    padding: .28rem .55rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.btn-goal {
+    background: #10b981;
+}
+
+/* emerald */
+.btn-assist {
+    background: #3b82f6;
+}
+
+/* blue */
+.btn-ga:hover {
+    filter: brightness(1.05);
+}
+
+/* gráfico */
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 320px;
+    max-height: 42vh;
+}
+
+@media(min-width:768px) {
+    .chart-container {
+        height: 380px;
+    }
+}
+
+@media(max-width:480px) {
+    .chart-container {
+        height: 240px !important;
+    }
+}
+
+/* mobile bar */
+#mobile-action-bar {
+    backdrop-filter: blur(8px);
+    background: rgba(255, 255, 255, .9);
+    border-top: 1px solid var(--stroke);
+    box-shadow: 0 -12px 22px -20px rgba(16, 24, 40, .3);
+}
+
+/* scrollbars */
+#player-list::-webkit-scrollbar,
+#selected-player-list::-webkit-scrollbar,
+.chart-container::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+}
+
+#player-list::-webkit-scrollbar-thumb,
+#selected-player-list::-webkit-scrollbar-thumb,
+.chart-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 999px;
+}
+
+#player-list::-webkit-scrollbar-track,
+#selected-player-list::-webkit-scrollbar-track,
+.chart-container::-webkit-scrollbar-track {
+    background: #e5e7eb;
+    border-radius: 999px;
+}
+
+select[multiple] {
+    height: 8rem;
+}
+
+/* sticky da coluna esquerda */
+@media (min-width: 1024px) {
+    .sticky {
+        position: sticky;
+        top: 24px;
+    }
+}
+
+/* tabela do prewview */
+#preview-modal table th, #preview-modal table td {
+    white-space: nowrap;
+}
+
+#preview-modal table tbody tr td:first-child {
+    white-space: normal;
+}

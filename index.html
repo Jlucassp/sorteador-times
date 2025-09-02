@@ -2,284 +2,130 @@
 <html lang="pt-BR">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sorteador de Times de Futebol Equilibrado com IA</title>
-    <!-- Chosen Palette: Paper -->
-    <!-- Application Structure Plan: A task-oriented single-page application divided into three logical steps: 1. Roster Management, 2. Draw Configuration, and 3. Results Visualization. This structure guides the user through the natural workflow of building a roster, setting rules, and seeing the outcome. It's more intuitive than mirroring the report's academic structure. Key interactions include dynamic player list management, a slider for balancing skill vs. position, and a drag-and-drop interface for manually refining the generated teams, which directly addresses the report's suggestion for user oversight and iterative refinement. An AI-powered name generation feature was added to enhance user engagement. -->
-    <!-- Visualization & Content Choices: Player data is managed in an interactive HTML table. Draw configuration uses standard form inputs and a slider for intuitive control. The core output is a series of 'team cards' generated with HTML/Tailwind, which are clear and easy to read. To validate the balance (Goal: Compare), a Bar Chart (Chart.js/Canvas) is used to display the average skill of each team, providing instant visual feedback on the primary balance metric. For team refinement (Goal: Organize/Interact), a drag-and-drop list system (Sortable.js library) is implemented, allowing users to manually swap players between teams and see the balance metrics update in real-time. This provides a powerful interactive loop for achieving the perfect balance. The Gemini API is used to generate creative team names, adding a fun, interactive element. -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <!-- Tailwind / libs via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f8f7f4;
-            color: #4a4a4a;
-        }
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-        html { scroll-behavior: smooth; }
-
-        .card {
-            background-color: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 0.75rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            transition: all 0.3s ease-in-out;
-        }
-
-        .card:hover { box-shadow: 0 8px 18px rgba(0,0,0,0.08); }
-
-        #player-list::-webkit-scrollbar,
-        #selected-player-list::-webkit-scrollbar,
-        .chart-container::-webkit-scrollbar {
-        height: 8px; width: 8px;
-        }
-        #player-list::-webkit-scrollbar-thumb,
-        #selected-player-list::-webkit-scrollbar-thumb,
-        .chart-container::-webkit-scrollbar-thumb {
-        background: #cbd5e0; border-radius: 9999px;
-        }
-        #player-list::-webkit-scrollbar-track,
-        #selected-player-list::-webkit-scrollbar-track,
-        .chart-container::-webkit-scrollbar-track {
-        background: #edf2f7; border-radius: 9999px;
-        }
-
-        .btn-primary {
-            background-color: #4a5568;
-            color: #ffffff;
-            transition: background-color 0.3s;
-        }
-
-        .btn-primary:hover {
-            background-color: #2d3748;
-        }
-
-        .btn-secondary {
-            background-color: #e2e8f0;
-            color: #4a5568;
-            transition: background-color 0.3s;
-        }
-
-        .btn-secondary:hover {
-            background-color: #cbd5e0;
-        }
-
-        .btn-ai {
-            background: linear-gradient(45deg, #4f46e5, #818cf8);
-            color: white;
-            transition: all 0.3s ease;
-        }
-
-        .btn-ai:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .player-item {
-            cursor: grab;
-            user-select: none;
-        }
-
-        .player-item:active {
-            cursor: grabbing;
-        }
-
-        .sortable-ghost {
-            opacity: 0.4;
-            background: #e0e7ff;
-        }
-
-        .chart-container {
-            position: relative;
-            width: 100%;
-            max-width: 800px;
-            margin-left: auto;
-            margin-right: auto;
-            height: 300px;
-            max-height: 40vh;
-        }
-
-        @media (min-width: 768px) {
-            .chart-container {
-                height: 350px;
-            }
-        }
-
-        select[multiple] {
-            height: 8rem;
-        }
-
-        .ai-loading-spinner {
-            display: inline-block;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            width: 16px;
-            height: 16px;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* iOS safe-areas */
-        :root {
-        --s-bottom: env(safe-area-inset-bottom);
-        --s-top: env(safe-area-inset-top);
-        }
-
-        /* Evitar zoom automático do iOS em inputs */
-        input, select, textarea, button {
-        font-size: 16px; /* >=16px evita zoom no foco */
-        }
-
-        /* Ajustes de altura para mobile */
-        @media (max-width: 480px) {
-        .chart-container { height: 240px !important; }
-        }
-    </style>
+    <!-- CSS do app -->
+    <link rel="stylesheet" href="assets/app.css" />
 </head>
 
 <body class="antialiased">
-
-    <div class="container mx-auto p-4 sm:p-6 lg:p-8 pt-[calc(16px+var(--s-top))] pb-[calc(16px+var(--s-bottom))]">
+    <div
+        class="container mx-auto max-w-6xl p-4 sm:p-6 lg:p-8 pt-[calc(16px+var(--s-top))] pb-[calc(16px+var(--s-bottom))]">
         <header class="text-center mb-10">
-            <h1 class="text-4xl font-bold text-gray-800">Sorteador de Times Equilibrado com IA</h1>
-            <p class="mt-2 text-lg text-gray-600">Crie times de futebol justos e use a IA para gerar nomes criativos.
+            <h1 class="text-3xl md:text-4xl app-title">Sorteador de Times Equilibrado com IA</h1>
+            <p class="mt-2 text-sm md:text-base app-subtitle">
+                Crie times de futebol justos e use a IA para gerar nomes criativos.
             </p>
         </header>
 
-        <main class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
-            <div class="lg:col-span-4 space-y-8">
-                <!-- 1. Gerir Elenco -->
-                <section id="roster-section" class="card p-6">
-                    <h2 class="text-2xl font-bold mb-4 text-gray-700">1. Gerir Elenco</h2>
-                    <form id="add-player-form" class="space-y-4">
-                        <div>
-                            <label for="player-name" class="block text-sm font-medium text-gray-700">Nome do
-                                Jogador</label>
-                            <input type="text" id="player-name" required
-                                class="mt-1 h-10 md:h-9 px-3 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-[16px] md:text-sm">
-                        </div>
-                        <div>
-                            <label for="player-skill" class="block text-sm font-medium text-gray-700">Habilidade
-                                (1-10)</label>
-                            <input type="number" id="player-skill" min="1" max="10" step="0.5" required
-                                class="mt-1 h-10 md:h-9 px-3 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-[16px] md:text-sm">
-                        </div>
-                        <div>
-                            <label for="player-position" class="block text-sm font-medium text-gray-700">Posição
-                                Primária</label>
-                            <select id="player-position" required
-                                class="mt-1 h-10 md:h-auto px-3 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-[16px] md:text-sm">
-                                <option value="DEF">Defensor (DEF)</option>
-                                <option value="MEI">Meio-Campo (MEI)</option>
-                                <option value="ATA">Atacante (ATA)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="player-position-sec" class="block text-sm font-medium text-gray-700">Posições
-                                Secundárias (Ctrl+Click)</label>
-                            <select id="player-position-sec" multiple
-                                class="mt-1 h-10 md:h-auto px-3 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-[16px] md:text-sm">
-                                <option value="DEF">Defensor (DEF)</option>
-                                <option value="MEI">Meio-Campo (MEI)</option>
-                                <option value="ATA">Atacante (ATA)</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="w-full btn-primary font-bold py-2 px-4 rounded-md">Adicionar
-                            Jogador</button>
-                    </form>
-                    <div class="mt-6">
-                        <div class="flex justify-between items-center mb-2">
-                            <h3 class="text-lg font-semibold text-gray-700">Elenco Principal (<span
-                                    id="player-count">0</span>)</h3>
-                            <button id="clear-roster" class="text-xs text-red-500 hover:text-red-700">Limpar
-                                Elenco</button>
-                        </div>
-                        <p class="text-xs text-gray-500 mb-2">Selecione os jogadores para o jogo de hoje.</p>
-                        <div class="mt-3">
-                            <label for="player-search" class="block text-xs font-medium text-gray-600">Pesquisar jogador</label>
-                            <input id="player-search" type="text" placeholder="Digite um nome..."
+        <main class="grid grid-cols-12 gap-6">
+            <!-- LEFT RAIL (sticky) -->
+            <aside class="col-span-12 lg:col-span-4 space-y-6">
+                <div class="sticky top-6 space-y-6">
+                    <section id="roster-section" class="card p-6">
+                        <h2 class="text-2xl font-bold mb-4 text-gray-700">1. Gerir Elenco</h2>
+                        <form id="add-player-form" class="space-y-4">
+                            <div>
+                                <label for="player-name" class="block text-sm font-medium text-gray-700">Nome do
+                                    Jogador</label>
+                                <input type="text" id="player-name" required
                                     class="mt-1 h-10 md:h-9 px-3 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-[16px] md:text-sm">
-                        </div>
-                        <div id="player-list" class="space-y-2 max-h-[40vh] md:max-h-64 overflow-y-auto pr-2">
-                        </div>
-                    </div>
-                    <div class="mt-6">
-                        <h3 class="text-lg font-semibold text-gray-700">Convocados para o Jogo (<span
-                                id="selected-player-count">0</span>)</h3>
-                        <div id="selected-player-list"
-                            class="flex flex-wrap gap-2 mt-2 max-h-[28vh] md:max-h-40 overflow-y-auto pr-2 bg-indigo-50 p-2 rounded-md">
-                            <p class="text-xs text-gray-500">Nenhum jogador convocado.</p>
-                        </div>
-                        <div class="flex flex-wrap items-end gap-2 mt-3">
-                            <div class="flex-1 min-w-[200px]">
-                                <label for="squad-name" class="block text-xs font-medium text-gray-600">Nome do grupo de 24 (convocados)</label>
-                                <input id="squad-name" type="text" placeholder="Ex.: Racha 12/08"
-                                    class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm
-                                            focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                             </div>
-                            <button id="save-squad-btn"
+                            <div>
+                                <label for="player-skill" class="block text-sm font-medium text-gray-700">Habilidade
+                                    (1-10)</label>
+                                <input type="number" id="player-skill" min="1" max="10" step="0.1" required
+                                    class="mt-1 h-10 md:h-9 px-3 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-[16px] md:text-sm">
+                            </div>
+                            <div>
+                                <label for="player-position" class="block text-sm font-medium text-gray-700">Posição
+                                    Primária</label>
+                                <select id="player-position" required
+                                    class="mt-1 h-10 md:h-auto px-3 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-[16px] md:text-sm">
+                                    <option value="DEF">Defensor (DEF)</option>
+                                    <option value="MEI">Meio-Campo (MEI)</option>
+                                    <option value="ATA">Atacante (ATA)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="player-position-sec"
+                                    class="block text-sm font-medium text-gray-700">Posições
+                                    Secundárias (Ctrl+Click)</label>
+                                <select id="player-position-sec" multiple
+                                    class="mt-1 h-10 md:h-auto px-3 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-[16px] md:text-sm">
+                                    <option value="DEF">Defensor (DEF)</option>
+                                    <option value="MEI">Meio-Campo (MEI)</option>
+                                    <option value="ATA">Atacante (ATA)</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full btn-primary font-bold py-2 px-4 rounded-md">Adicionar
+                                Jogador</button>
+                        </form>
+                        <div class="mt-6">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-lg font-semibold text-gray-700">Elenco Principal (<span
+                                        id="player-count">0</span>)</h3>
+                                <button id="clear-roster" class="text-xs text-red-500 hover:text-red-700">Limpar
+                                    Elenco</button>
+                            </div>
+                            <p class="text-xs text-gray-500 mb-2">Selecione os jogadores para o jogo de hoje.</p>
+                            <div class="mt-3">
+                                <label for="player-search" class="block text-xs font-medium text-gray-600">Pesquisar
+                                    jogador</label>
+                                <input id="player-search" type="text" placeholder="Digite um nome..."
+                                    class="mt-1 h-10 md:h-9 px-3 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-[16px] md:text-sm">
+                            </div>
+                            <div id="player-list" class="space-y-2 max-h-[40vh] md:max-h-64 overflow-y-auto pr-2">
+                            </div>
+                        </div>
+                        <div class="mt-6">
+                            <h3 class="text-lg font-semibold text-gray-700">Convocados para o Jogo (<span
+                                    id="selected-player-count">0</span>)</h3>
+                            <div id="selected-player-list"
+                                class="flex flex-wrap gap-2 mt-2 max-h-[28vh] md:max-h-40 overflow-y-auto pr-2 bg-indigo-50 p-2 rounded-md">
+                                <p class="text-xs text-gray-500">Nenhum jogador convocado.</p>
+                            </div>
+                            <div class="flex flex-wrap items-end gap-2 mt-3">
+                                <div class="flex-1 min-w-[200px]">
+                                    <label for="squad-name" class="block text-xs font-medium text-gray-600">Nome do
+                                        grupo de
+                                        24 (convocados)</label>
+                                    <input id="squad-name" type="text" placeholder="Ex.: Racha 12/08" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm
+                                            focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                </div>
+                                <button id="save-squad-btn"
                                     class="btn-primary px-3 py-2 rounded-md text-white font-medium">
-                            Salvar 24
-                            </button>
-                            <div class="flex items-center gap-2">
-                                <select id="saved-squads-select"
-                                        class="rounded-md border border-gray-300 shadow-sm bg-white
+                                    Salvar 24
+                                </button>
+                                <div class="flex items-center gap-2">
+                                    <select id="saved-squads-select" class="rounded-md border border-gray-300 shadow-sm bg-white
                                             focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                <option disabled selected>Carregar convocados salvos</option>
-                                </select>
-                                <button id="load-squad-btn"
+                                        <option disabled selected>Carregar convocados salvos</option>
+                                    </select>
+                                    <button id="load-squad-btn"
                                         class="btn-secondary px-3 py-2 rounded-md text-sm font-medium">
-                                Carregar
-                                </button>
-                                <button id="delete-squad-btn"
+                                        Carregar
+                                    </button>
+                                    <button id="delete-squad-btn"
                                         class="px-3 py-2 rounded-md text-sm font-medium border border-red-300 text-red-600 hover:bg-red-50">
-                                Apagar
-                                </button>
+                                        Apagar
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </section>
+                    </section>
+                </div>
+            </aside>
 
-                <!-- Gestão de Sorteios -->
-                <section id="saves-section" class="card p-6">
-                    <h2 class="text-2xl font-bold mb-4 text-gray-700">Gestão de Sorteios</h2>
-                    <div class="space-y-4">
-                        <div class="flex space-x-2">
-                            <input type="text" id="save-name" placeholder="Nome do sorteio"
-                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                            <button id="save-draw-btn"
-                                class="btn-secondary px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap">Guardar</button>
-                        </div>
-                        <div>
-                            <label for="saved-draws-select" class="block text-sm font-medium text-gray-700">Sorteios
-                                Guardados</label>
-                            <div class="flex space-x-2 mt-1">
-                                <select id="saved-draws-select"
-                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                    <option>Nenhum sorteio guardado</option>
-                                </select>
-                                <button id="load-draw-btn"
-                                    class="btn-primary px-4 py-2 rounded-md text-sm font-medium">Carregar</button>
-                                <button id="delete-draw-btn"
-                                    class="bg-red-500 text-white px-4 py-2 rounded-md text-sm font-medium">&times;</button>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </div>
-
-            <div class="lg:col-span-8 space-y-8">
+            <section class="col-span-12 lg:col-span-8 space-y-6" id="content-area">
                 <!-- 2. Definir Sorteio -->
                 <section id="config-section" class="card p-6">
                     <h2 class="text-2xl font-bold mb-4 text-gray-700">2. Definir Sorteio</h2>
@@ -314,87 +160,90 @@
                                 <span class="text-sm">Habilidade</span>
                             </div>
                             <div class="md:col-span-2">
-                                <label for="racha-name" class="block text-sm font-medium text-gray-700">Racha (nome)</label>
-                                <input id="racha-name" type="text" placeholder="Ex.: Racha 12/08"
-                                        class="mt-1 h-10 px-3 block w-full rounded-md border border-gray-300 shadow-sm
+                                <label for="racha-name" class="block text-sm font-medium text-gray-700">Racha
+                                    (nome)</label>
+                                <input id="racha-name" type="text" placeholder="Ex.: Racha 12/08" class="mt-1 h-10 px-3 block w-full rounded-md border border-gray-300 shadow-sm
                                                 focus:border-indigo-500 focus:ring-indigo-500 text-[16px] md:text-sm">
-                                <p class="text-xs text-gray-500 mt-1">Usaremos esse nome para salvar gols/assistências deste jogo.</p>
-                            </div>
-                            <!-- Selecionar racha salvo + ações -->
-                            <div class="md:col-span-2 mt-4">
-                                <label for="racha-select" class="block text-sm font-medium text-gray-700">Abrir racha anterior</label>
-                                <div class="flex flex-wrap gap-2 mt-1">
-                                    <select id="racha-select"
-                                            class="rounded-md border border-gray-300 shadow-sm bg-white
-                                                focus:border-indigo-500 focus:ring-indigo-500 text-[16px] md:text-sm">
-                                    <option disabled selected>Nenhum racha salvo</option>
-                                    </select>
-                                    <button id="open-racha-btn"
-                                            class="btn-secondary px-3 py-2 rounded-md text-sm font-medium">
-                                    Abrir racha
-                                    </button>
-                                    <button id="export-racha-btn"
-                                            class="btn-primary px-3 py-2 rounded-md text-sm font-medium">
-                                    Exportar CSV
-                                    </button>
-                                    <button id="delete-racha-btn"
-                                            class="px-3 py-2 rounded-md text-sm font-medium border border-red-300 text-red-600 hover:bg-red-50">
-                                    Apagar racha
-                                    </button>
-                                </div>
-                                <p class="text-xs text-gray-500 mt-1">Dica: o CSV inclui nome, gols, assistências e total.</p>
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700">Exibição</label>
-                                <div class="flex items-center gap-2 mt-2">
-                                    <input id="show-ratings" type="checkbox"
-                                        class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
-                                    <label for="show-ratings" class="text-sm text-gray-700 select-none">
-                                    Mostrar notas nos times
-                                    </label>
-                                </div>
+                                <p class="text-xs text-gray-500 mt-1">Usaremos esse nome para salvar gols/assistências
+                                    deste jogo.</p>
                             </div>
                         </div>
                     </div>
                     <button id="generate-teams"
-                            class="mt-6 w-full btn-primary font-bold py-3 px-4 rounded-md text-lg tracking-wide">
-                    <span id="generate-btn-text">Sortear Times!</span>
-                    <div id="loading-spinner" class="hidden animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>
+                        class="mt-6 w-full btn-primary font-bold py-3 px-4 rounded-md text-lg tracking-wide">
+                        <span id="generate-btn-text">Sortear Times!</span>
+                        <div id="loading-spinner"
+                            class="hidden animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>
                     </button>
                 </section>
 
-                <!-- 3. Resultado do Sorteio -->
+                <!-- NOVO: Toolbar dos Resultados (passo 3) -->
+                <section id="results-toolbar" class="card p-4 hidden">
+                    <div class="toolbar__left">
+                        <select id="racha-select"
+                            class="rounded-md border border-gray-300 shadow-sm bg-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <option disabled selected>Nenhum racha salvo</option>
+                        </select>
+                        <button id="open-racha-btn" class="btn btn-secondary">Abrir racha</button>
+                        <button id="export-racha-btn" class="btn btn-secondary">Exportar CSV</button>
+                        <button id="delete-racha-btn" class="btn btn-danger">Apagar racha</button>
+                    </div>
+
+                    <div class="toolbar__right">
+                        <label class="inline-checkbox">
+                            <input id="show-ratings" type="checkbox"
+                                class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                            Mostrar notas
+                        </label>
+                        <button id="recalc-ratings" class="btn btn-secondary">Atualizar notas pelos scouts</button>
+                        <button id="save-racha-btn" class="btn btn-primary">Salvar scouts</button>
+                        <button id="finalize-racha-btn" class="btn btn-secondary">Finalizar racha</button>
+                        <button id="new-racha-btn" class="btn btn-danger">Novo racha</button>
+                        <!-- (se já adicionou antes) -->
+                        <!-- <button id="preview-ratings-btn" class="btn btn-primary">Prévia de notas deste racha</button> -->
+                    </div>
+
+                    <p id="current-racha-label" class="w-full text-sm text-gray-500 mt-1"></p>
+                </section>
+
+                <!-- 3. Resultado do Sorteio (sem a parte movida pro toolbar; passo 4) -->
                 <section id="results-section" class="hidden">
-                    <div class="card p-6 mb-8">
-                        <h2 class="text-2xl font-bold mb-4 text-gray-700">Métricas de Equilíbrio</h2>
-                        <p id="current-racha-label" class="text-sm text-gray-600"></p>
-                        <div id="balance-metrics" class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                        </div>
+                    <div class="card p-6 mb-6">
+                        <h2 class="section-title mb-1">Métricas de Equilíbrio</h2>
+                        <p class="section-desc mb-4">Acompanhe a qualidade do balanceamento e o encaixe por posição.</p>
+                        <div id="balance-metrics" class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center"></div>
                         <div class="chart-container mt-6 h-[240px] md:h-[350px]">
                             <canvas id="balance-chart"></canvas>
                         </div>
                     </div>
 
-                    <h2 class="text-2xl font-bold mb-4 text-gray-700">3. Times Gerados</h2>
-                    <p class="text-gray-600 mb-4 text-sm">Para afinar o equilíbrio, pode arrastar e soltar jogadores
-                        entre os times. As métricas serão atualizadas automaticamente.</p>
-                    <div id="teams-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    </div>
+                    <h2 class="section-title mb-2">3. Times Gerados</h2>
+                    <p class="section-desc mb-4">Arraste e solte jogadores entre os times; as métricas sobem
+                        automaticamente.
+                    </p>
+
+                    <!-- Ajuste de grid dos times: 1col → 2col md → 4col xl -->
+                    <div id="teams-container" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
                 </section>
 
-                <div id="message-box" class="hidden p-4 rounded-md text-center"></div>
+                <!-- 4. Gestão de Sorteios (mover para a direita) -->
+                <section id="saves-section" class="card p-6">
 
-            </div>
+                </section>
+            </section>
 
-            <!-- Barra fixa de ação (mobile only) -->
-            <div id="mobile-action-bar"
-                class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 p-3 pb-[calc(12px+var(--s-bottom))] md:hidden">
-            <button id="generate-teams-mobile"
-                    class="w-full btn-primary font-bold py-3 px-4 rounded-md text-base tracking-wide">
-                Sortear Times!
-            </button>
-            </div>
-        </main>
+
+    </div>
+
+    <!-- Barra fixa de ação (mobile only) -->
+    <div id="mobile-action-bar"
+        class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 p-3 pb-[calc(12px+var(--s-bottom))] md:hidden">
+        <button id="generate-teams-mobile"
+            class="w-full btn-primary font-bold py-3 px-4 rounded-md text-base tracking-wide">
+            Sortear Times!
+        </button>
+    </div>
+    </main>
     </div>
 
     <!-- Edit Player Modal -->
@@ -417,7 +266,7 @@
 
                 <div>
                     <label for="edit-skill" class="block text-sm font-medium text-gray-700">Habilidade (1-10)</label>
-                    <input id="edit-skill" type="number" min="1" max="10" step="1" required class="mt-1 h-10 px-3 block w-full rounded-md border border-gray-300 shadow-sm
+                    <input id="edit-skill" type="number" min="1" max="10" step="0.1" required class="mt-1 h-10 px-3 block w-full rounded-md border border-gray-300 shadow-sm
        focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                 </div>
 
@@ -445,1170 +294,57 @@
 
                 <div class="flex justify-end gap-2 pt-2">
                     <button type="button" id="edit-cancel"
-                            class="px-3 py-2 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100">
-                    Cancelar
+                        class="px-3 py-2 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100">
+                        Cancelar
                     </button>
                     <button type="submit"
-                            class="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 font-medium">
-                    Salvar
+                        class="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 font-medium">
+                        Salvar
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const addPlayerForm = document.getElementById('add-player-form');
-            const playerListEl = document.getElementById('player-list');
-            const playerCountEl = document.getElementById('player-count');
-            const selectedPlayerListEl = document.getElementById('selected-player-list');
-            const selectedPlayerCountEl = document.getElementById('selected-player-count');
-            const clearRosterBtn = document.getElementById('clear-roster');
-            const generateTeamsBtn = document.getElementById('generate-teams');
-            const resultsSection = document.getElementById('results-section');
-            const teamsContainer = document.getElementById('teams-container');
-            const balanceMetricsEl = document.getElementById('balance-metrics');
-            const messageBox = document.getElementById('message-box');
-
-            const generateBtnText = document.getElementById('generate-btn-text');
-            const loadingSpinner = document.getElementById('loading-spinner');
-
-            const saveNameInput = document.getElementById('save-name');
-            const saveDrawBtn = document.getElementById('save-draw-btn');
-            const savedDrawsSelect = document.getElementById('saved-draws-select');
-            const loadDrawBtn = document.getElementById('load-draw-btn');
-            const deleteDrawBtn = document.getElementById('delete-draw-btn');
-
-            let players = [];
-            let selectedPlayerIds = new Set();
-            let teams = [];
-            let balanceChart;
-
-            // Pesquisa por nome (accent-insensitive)
-            let playerSearchTerm = '';
-            const normalizeTxt = (s) => (s || '').toString().normalize('NFD').replace(/\p{Diacritic}/gu, '')
-                .toLowerCase();
-            const playerSearchInput = document.getElementById('player-search');
-            if (playerSearchInput) {
-                playerSearchInput.addEventListener('input', (e) => {
-                    playerSearchTerm = normalizeTxt(e.target.value);
-                    renderPlayerList();
-                });
-            }
-
-            const generateTeamsMobileBtn = document.getElementById('generate-teams-mobile');
-            if (generateTeamsMobileBtn) {
-                generateTeamsMobileBtn.addEventListener('click', () => {
-                document.getElementById('generate-teams').click();
-                });
-            }
-
-            // Toggle de notas (visual). Padrão: OFF.
-            // Se o checkbox existir, usamos; se não existir, continua false sem quebrar.
-            let showRatings = false;
-            const showRatingsInput = document.getElementById('show-ratings');
-            if (showRatingsInput) {
-            showRatings = !!showRatingsInput.checked;
-            showRatingsInput.addEventListener('change', () => {
-                showRatings = showRatingsInput.checked;
-                if (teams.length) renderTeams(); // re-renderiza times se já existirem
-            });
-            }
-
-            // Travar número de times em 4
-            const numTeamsSelect = document.getElementById('num-teams');
-            if (numTeamsSelect) {
-                numTeamsSelect.value = '4';
-                numTeamsSelect.disabled = true;
-                numTeamsSelect.classList.add('opacity-60','cursor-not-allowed');
-            }
-
-            // === Racha (sessão) ===
-            let currentRachaId = null; // string
-
-            const getRachas = () => JSON.parse(localStorage.getItem('rachas')) || {};
-            const saveRachas = (data) => localStorage.setItem('rachas', JSON.stringify(data));
-
-            const makeRachaId = (name) => {
-            const ts = new Date().toISOString().replace(/[:.]/g,'-');
-            const safe = (name || '').trim() || `Racha ${new Date().toLocaleString('pt-BR')}`;
-            return `${safe}__${ts}`;
-            };
-
-            function ensureRacha() {
-            if (currentRachaId) return currentRachaId;
-            const nameInput = document.getElementById('racha-name');
-            const name = (nameInput?.value || '').trim();
-            const id = makeRachaId(name);
-            const all = getRachas();
-            if (!all[id]) {
-                all[id] = { name: name || id.split('__')[0], createdAt: Date.now(), stats: {} };
-                saveRachas(all);
-            }
-            currentRachaId = id;
-            // mostra o nome do racha na UI
-            const lbl = document.getElementById('current-racha-label');
-            if (lbl) {
-                const showName = all[id].name || id.split('__')[0];
-                lbl.textContent = `Racha: ${showName}`;
-            }
-            return id;
-            }
-
-            function getPlayerStats(rachaId, playerId) {
-            const all = getRachas();
-            const r = all[rachaId] || { stats: {} };
-            const s = r.stats[playerId] || { goals: 0, assists: 0 };
-            return s;
-            }
-
-            function setPlayerStats(rachaId, playerId, stats) {
-            const all = getRachas();
-            if (!all[rachaId]) all[rachaId] = { name: 'Racha', createdAt: Date.now(), stats: {} };
-            all[rachaId].stats[playerId] = stats;
-            saveRachas(all);
-            }
-
-            // ===== Dropdown de rachas salvos =====
-            const rachaSelect = document.getElementById('racha-select');
-            const openRachaBtn = document.getElementById('open-racha-btn');
-            const exportRachaBtn = document.getElementById('export-racha-btn');
-            const deleteRachaBtn = document.getElementById('delete-racha-btn');
-
-            function populateRachasDropdown() {
-            if (!rachaSelect) return;
-            const all = getRachas();
-            const ids = Object.keys(all);
-            rachaSelect.innerHTML = '';
-            if (!ids.length) {
-                rachaSelect.innerHTML = '<option disabled selected>Nenhum racha salvo</option>';
-                if (openRachaBtn) openRachaBtn.disabled = true;
-                if (exportRachaBtn) exportRachaBtn.disabled = true;
-                if (deleteRachaBtn) deleteRachaBtn.disabled = true;
-                return;
-            }
-            // ordenar por data (mais novo primeiro)
-            ids.sort((a,b) => (all[b].createdAt||0) - (all[a].createdAt||0));
-            ids.forEach(id => {
-                const opt = document.createElement('option');
-                const name = all[id].name || id.split('__')[0];
-                const when = all[id].createdAt ? new Date(all[id].createdAt).toLocaleString('pt-BR') : '';
-                opt.value = id;
-                opt.textContent = when ? `${name} — ${when}` : name;
-                rachaSelect.appendChild(opt);
-            });
-            if (openRachaBtn) openRachaBtn.disabled = false;
-            if (exportRachaBtn) exportRachaBtn.disabled = false;
-            if (deleteRachaBtn) deleteRachaBtn.disabled = false;
-            }
-
-            function openRachaById(id) {
-            const all = getRachas();
-            if (!all[id]) { showMessage('Racha não encontrado.', 'error'); return; }
-            currentRachaId = id;
-            const lbl = document.getElementById('current-racha-label');
-            if (lbl) {
-                const showName = all[id].name || id.split('__')[0];
-                lbl.textContent = `Racha: ${showName}`;
-            }
-            // re-renderiza times para exibir contadores de G/A deste racha
-            if (teams.length) renderTeams();
-            showMessage('Racha aberto.');
-            }
-
-            // Exporta CSV do racha atual
-            function exportCurrentRachaCSV() {
-            if (!currentRachaId) { showMessage('Nenhum racha ativo para exportar.', 'error'); return; }
-            const all = getRachas();
-            const r = all[currentRachaId];
-            if (!r) { showMessage('Racha não encontrado.', 'error'); return; }
-
-            // Monta linhas com: Jogador, Gols, Assistências, Total, Time (se estiverem montados)
-            const byId = new Map(players.map(p => [p.id, p.name]));
-            const teamByPlayer = new Map();
-            teams.forEach((t, i) => t.players.forEach(p => teamByPlayer.set(p.id, `Time ${i+1}`)));
-
-            const rows = [['Jogador','Gols','Assistências','Total','Time']];
-            const stats = r.stats || {};
-            const ids = Object.keys(stats);
-
-            // incluir também jogadores do elenco que tenham 0 no racha (opcional: comente se não quiser)
-            const unionIds = new Set(ids.map(Number));
-            Object.keys(stats).forEach(k => unionIds.add(Number(k)));
-
-            Array.from(unionIds).forEach(pid => {
-                const s = stats[pid] || { goals: 0, assists: 0 };
-                const name = byId.get(pid) || `Jogador ${pid}`;
-                const team = teamByPlayer.get(pid) || '';
-                rows.push([name, s.goals||0, s.assists||0, (s.goals||0)+(s.assists||0), team]);
-            });
-
-            // CSV
-            const csv = rows.map(r => r.map(v => {
-                const str = String(v ?? '');
-                return /[",;\n]/.test(str) ? `"${str.replace(/"/g,'""')}"` : str;
-            }).join(';')).join('\n');
-
-            const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            const base = r.name || 'racha';
-            a.href = url;
-            a.download = `${base.replace(/[\\/:*?"<>|]/g,'_')}.csv`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            }
-
-            // Apagar racha
-            function deleteRachaById(id) {
-            const all = getRachas();
-            if (!all[id]) return;
-            delete all[id];
-            saveRachas(all);
-            if (currentRachaId === id) {
-                currentRachaId = null;
-                const lbl = document.getElementById('current-racha-label');
-                if (lbl) lbl.textContent = '';
-                // zera contadores visuais
-                if (teams.length) renderTeams();
-            }
-            populateRachasDropdown();
-            showMessage('Racha apagado.', 'error');
-            }
-
-            const formations = {
-                auto: {},
-                '2-2-2': {
-                    DEF: 2,
-                    MEI: 2,
-                    ATA: 2,
-                    total: 6
-                },
-                '2-3-1': {
-                    DEF: 2,
-                    MEI: 3,
-                    ATA: 1,
-                    total: 6
-                },
-                '3-2-1': {
-                    DEF: 3,
-                    MEI: 2,
-                    ATA: 1,
-                    total: 6
-                },
-                '1-3-2': {
-                    DEF: 1,
-                    MEI: 3,
-                    ATA: 2,
-                    total: 6
-                },
-            };
-
-            const renderPlayerList = () => {
-                playerListEl.innerHTML = '';
-                players.sort((a, b) => a.name.localeCompare(b.name));
-                const list = playerSearchTerm ?
-                    players.filter(p => normalizeTxt(p.name).includes(playerSearchTerm)) :
-                    players;
-                list.forEach(player => {
-                    const playerDiv = document.createElement('div');
-                    playerDiv.className =
-                        'flex justify-between items-center bg-gray-50 p-2 rounded-md';
-                    playerDiv.innerHTML = `
-                        <div class="flex items-center">
-                            <input
-                            type="checkbox"
-                            data-id="${player.id}"
-                            class="select-player h-4 w-4 text-indigo-600 border-gray-300 rounded
-                                    focus:ring-indigo-500 mr-3"
-                            ${selectedPlayerIds.has(player.id) ? 'checked' : ''}
-                            >
-                            <div>
-                            <p class="font-semibold">${player.name}</p>
-                            <p class="text-xs text-gray-500">
-                                Habil.: ${player.skill} | Posição: ${player.position}
-                                ${player.secondaryPositions && player.secondaryPositions.length
-                                ? ` | Sec.: ${player.secondaryPositions.join(", ")}`
-                                : ""}
-                            </p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button data-id="${player.id}"
-                                   class="edit-player text-xs md:text-xs text-blue-600 hover:text-blue-800 px-2 py-1 -mx-2 -my-1 rounded">Editar</button>
-                            <button data-id="${player.id}"
-                                    class="remove-player text-red-500 hover:text-red-700 font-bold text-lg px-2 py-1 -mx-2 -my-1 rounded">&times;</button>
-                        </div>
-                        `;
-                    playerListEl.appendChild(playerDiv);
-                });
-                playerCountEl.textContent = players.length;
-                renderSelectedPlayersList();
-            };
-
-            const renderSelectedPlayersList = () => {
-                selectedPlayerListEl.className = 'flex flex-wrap gap-2 mt-2 max-h-40 overflow-y-auto pr-2 bg-indigo-50 p-2 rounded-md';
-                selectedPlayerListEl.innerHTML = '';
-                if (selectedPlayerIds.size === 0) {
-                    selectedPlayerListEl.innerHTML =
-                        '<p class="text-xs text-gray-500">Nenhum jogador convocado.</p>';
-                } else {
-                    const selectedPlayers = players
-                        .filter(p => selectedPlayerIds.has(p.id))
-                        .sort((a, b) => a.name.localeCompare(b.name));
-
-                    selectedPlayers.forEach(player => {
-                        const playerP = document.createElement('span');
-                        playerP.className = 'inline-flex items-center gap-1 text-xs text-gray-700 bg-white border border-gray-200 px-2 py-1 rounded-full shadow-sm';
-                        playerP.textContent = player.name;
-                        selectedPlayerListEl.appendChild(playerP);
-                    });
-                }
-                selectedPlayerCountEl.textContent = selectedPlayerIds.size;
-            };
-
-            const addPlayer = (playerData) => {
-                const newPlayer = {
-                    id: playerData.id || Date.now(),
-                    name: playerData.name,
-                    skill: parseFloat(playerData.skill),
-                    position: playerData.position,
-                    secondaryPositions: playerData.secondaryPositions || []
-                };
-                players.push(newPlayer);
-                saveAndRender();
-            };
-
-            const removePlayer = (id) => {
-                players = players.filter(p => p.id !== id);
-                selectedPlayerIds.delete(id);
-                saveAndRender();
-            };
-
-            const editModal = document.getElementById('edit-modal');
-            const editForm = document.getElementById('edit-player-form');
-            const editId = document.getElementById('edit-id');
-            const editName = document.getElementById('edit-name');
-            const editSkill = document.getElementById('edit-skill');
-            const editPos = document.getElementById('edit-position');
-            const editPosSec = document.getElementById('edit-position-sec');
-            const editCancel = document.getElementById('edit-cancel');
-            const editCancelX = document.getElementById('edit-cancel-x');
-
-            // Abrir modal
-            function openEditPlayer(id) {
-                const p = players.find(x => x.id === id);
-                if (!p) return;
-                editId.value = p.id;
-                editName.value = p.name;
-                editSkill.value = p.skill;
-                editPos.value = p.position;
-                Array.from(editPosSec.options).forEach(o => o.selected = p.secondaryPositions.includes(o
-                    .value));
-                editModal.classList.remove('hidden');
-                editModal.classList.add('flex');
-            }
-
-            // Fechar modal
-            function closeEditModal() {
-                editModal.classList.add('hidden');
-                editModal.classList.remove('flex');
-                editForm.reset();
-            }
-            editCancel.addEventListener('click', closeEditModal);
-            editCancelX.addEventListener('click', closeEditModal);
-            editModal.addEventListener('click', e => {
-                if (e.target === editModal) closeEditModal();
-            });
-
-            // Salvar edição
-            editForm.addEventListener('submit', e => {
-                e.preventDefault();
-                const id = parseInt(editId.value);
-                const idx = players.findIndex(p => p.id === id);
-                if (idx === -1) return;
-
-                players[idx] = {
-                    ...players[idx],
-                    name: editName.value.trim(),
-                    skill: Math.max(1, Math.min(10, parseInt(editSkill.value))),
-                    position: editPos.value,
-                    secondaryPositions: Array.from(editPosSec.selectedOptions).map(o => o.value)
-                };
-
-                localStorage.setItem('masterPlayers', JSON.stringify(players));
-                renderPlayerList();
-                renderSelectedPlayersList();
-                closeEditModal();
-                showMessage('Jogador atualizado com sucesso.', 'success');
-            });
-
-            const saveAndRender = () => {
-                localStorage.setItem('masterPlayers', JSON.stringify(players));
-                renderPlayerList();
-            }
-
-            const showMessage = (text, type = 'success') => {
-                messageBox.textContent = text;
-                messageBox.className =
-                    `p-4 rounded-md text-center text-sm ${type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`;
-                messageBox.classList.remove('hidden');
-                setTimeout(() => messageBox.classList.add('hidden'), 4000);
-            };
-
-            addPlayerForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const secondaryPositions = Array.from(document.getElementById('player-position-sec')
-                    .selectedOptions).map(opt => opt.value);
-
-                const playerData = {
-                    name: document.getElementById('player-name').value,
-                    skill: document.getElementById('player-skill').value,
-                    position: document.getElementById('player-position').value,
-                    secondaryPositions: secondaryPositions
-                };
-                addPlayer(playerData);
-                addPlayerForm.reset();
-                document.getElementById('player-position-sec').selectedIndex = -1;
-            });
-
-            playerListEl.addEventListener('click', (e) => {
-                const target = e.target;
-                if (target.classList.contains('edit-player')) {
-                    const id = parseInt(target.getAttribute('data-id'));
-                    openEditPlayer(id);
-                } else if (target.classList.contains('remove-player')) {
-                    const id = parseInt(target.getAttribute('data-id'));
-                    removePlayer(id);
-                } else if (target.classList.contains('select-player')) {
-                    const id = parseInt(target.getAttribute('data-id'));
-                    if (target.checked) {
-                        selectedPlayerIds.add(id);
-                    } else {
-                        selectedPlayerIds.delete(id);
-                    }
-                    renderSelectedPlayersList();
-                }
-            });
-
-            clearRosterBtn.addEventListener('click', () => {
-                if (confirm(
-                        'Tem certeza de que deseja limpar todo o elenco principal? Esta ação não pode ser desfeita.'
-                    )) {
-                    players = [];
-                    selectedPlayerIds.clear();
-                    saveAndRender();
-                }
-            });
-
-            generateTeamsBtn.addEventListener('click', () => {
-                const playersForDraw = players.filter(p => selectedPlayerIds.has(p.id));
-                const selectedCount = playersForDraw.length;
-                const formationKey = document.getElementById('formation').value;
-                const formation = formations[formationKey] || {};
-                const numTeams = 4; // travado
-                const playersPerTeam = formation.total || 6; // 6 jogadores de linha
-
-                if (selectedCount !== 24) {
-                    showMessage(`Selecione exatamente 24 jogadores (atual: ${selectedCount}).`,
-                        'error');
-                    return;
-                }
-
-                toggleLoading(true);
-
-                setTimeout(() => {
-                    try {
-                        const rachaId = ensureRacha();
-                        runBalancingAlgorithm(playersForDraw);
-                    } finally {
-                        toggleLoading(false); // sempre para o loading, mesmo se der erro no render
-                    }
-                }, 100);
-            });
-
-            const toggleLoading = (isLoading) => {
-                generateBtnText.classList.toggle('hidden', isLoading);
-                loadingSpinner.classList.toggle('hidden', !isLoading);
-                generateTeamsBtn.disabled = isLoading;
-            };
-
-            const getTeamStats = (team) => {
-                if (team.length === 0) return {
-                    totalSkill: 0,
-                    avgSkill: 0,
-                    positions: {}
-                };
-                const totalSkill = team.reduce((sum, p) => sum + p.skill, 0);
-                const avgSkill = totalSkill / team.length;
-                const positions = team.reduce((acc, p) => {
-                    acc[p.position] = (acc[p.position] || 0) + 1;
-                    return acc;
-                }, {});
-                return {
-                    totalSkill,
-                    avgSkill,
-                    positions
-                };
-            };
-
-            const calculateOverallBalance = () => {
-                if (teams.length === 0 || teams.every(t => t.players.length === 0)) return {
-                    stdDev: 0,
-                    range: 0,
-                    fillRate: 0,
-                    minAvg: 0,
-                    maxAvg: 0
-                };
-                const teamAvgs = teams.map(t => getTeamStats(t.players).avgSkill);
-                const overallAvg = teamAvgs.reduce((sum, avg) => sum + avg, 0) / teamAvgs.length;
-                const stdDev = Math.sqrt(teamAvgs.map(avg => Math.pow(avg - overallAvg, 2)).reduce((sum,
-                    sq) => sum + sq, 0) / teamAvgs.length);
-                const maxAvg = Math.max(...teamAvgs);
-                const minAvg = Math.min(...teamAvgs);
-                const range = maxAvg - minAvg;
-
-                let filledSlots = 0;
-                let totalSlots = 0;
-                const formationKey = document.getElementById('formation').value;
-
-                if (formationKey !== 'auto') {
-                    const formation = formations[formationKey];
-                    teams.forEach(team => {
-                        const stats = getTeamStats(team.players);
-                        Object.keys(formation).forEach(pos => {
-                            if (pos !== 'total') {
-                                totalSlots += formation[pos];
-                                filledSlots += Math.min(stats.positions[pos] || 0,
-                                    formation[pos]);
-                            }
-                        });
-                    });
-                }
-                const fillRate = totalSlots > 0 ? (filledSlots / totalSlots) * 100 : 100;
-
-                return {
-                    stdDev,
-                    range,
-                    fillRate,
-                    minAvg,
-                    maxAvg
-                };
-            };
-
-            const renderBalanceMetrics = () => {
-                const {
-                    stdDev,
-                    range,
-                    fillRate,
-                    minAvg,
-                    maxAvg
-                } = calculateOverallBalance();
-                balanceMetricsEl.innerHTML =
-                    `
-                    <div class="p-2"><p class="text-sm text-gray-500">Desvio Padrão Habil.</p><p class="text-2xl font-bold text-gray-800">${stdDev.toFixed(2)}</p></div>
-                    <div class="p-2"><p class="text-sm text-gray-500">Amplitude Habil. (Max-Min)</p><p class="text-2xl font-bold text-gray-800">${range.toFixed(2)}</p></div>
-                    <div class="p-2"><p class="text-sm text-gray-500">Média Habil. (Min/Max)</p><p class="text-2xl font-bold text-gray-800">${minAvg.toFixed(2)} / ${maxAvg.toFixed(2)}</p></div>
-                    <div class="p-2"><p class="text-sm text-gray-500">Encaixe Posicional</p><p class="text-2xl font-bold text-gray-800">${fillRate.toFixed(0)}%</p></div>`;
-                updateBalanceChart();
-            };
-
-            const updateBalanceChart = () => {
-                const teamLabels = teams.map(t => t.name);
-                const teamAvgSkills = teams.map(t => getTeamStats(t.players).avgSkill);
-
-                if (balanceChart) {
-                    balanceChart.data.labels = teamLabels;
-                    balanceChart.data.datasets[0].data = teamAvgSkills;
-                    balanceChart.update();
-                } else {
-                    const ctx = document.getElementById('balance-chart').getContext('2d');
-                    balanceChart = new Chart(ctx, {
-                        type: 'bar',
-                        data: {
-                            labels: teamLabels,
-                            datasets: [{
-                                label: 'Média de Habilidade',
-                                data: teamAvgSkills,
-                                backgroundColor: 'rgba(74, 85, 104, 0.6)',
-                                borderColor: 'rgba(74, 85, 104, 1)',
-                                borderWidth: 1,
-                                borderRadius: 4,
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    grid: {
-                                        color: '#e2e8f0'
-                                    }
-                                },
-                                x: {
-                                    grid: {
-                                        display: false
-                                    }
-                                }
-                            },
-                            plugins: {
-                                legend: {
-                                    display: false
-                                },
-                                tooltip: {
-                                    callbacks: {
-                                        label: (c) => `Média: ${c.parsed.y.toFixed(2)}`
-                                    }
-                                }
-                            }
-                        }
-                    });
-                }
-            };
-
-            const renderTeams = () => {
-                teamsContainer.innerHTML = '';
-                teams.forEach((team, index) => {
-                    const teamCard = document.createElement('div');
-                    teamCard.className = 'card p-4 space-y-3';
-                    const teamStats = getTeamStats(team.players);
-                    let positionCounts = '';
-                    if (document.getElementById('formation').value !== 'auto') {
-                        const formation = formations[document.getElementById('formation').value];
-                        positionCounts = Object.keys(formation).filter(k => k !== 'total').map(
-                            pos =>
-                            `<span class="text-xs px-2 py-1 rounded-full ${ (teamStats.positions[pos] || 0) === formation[pos] ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }">${pos}: ${teamStats.positions[pos] || 0}/${formation[pos]}</span>`
-                        ).join(' ');
-                    }
-
-                    teamCard.innerHTML = `
-                        <div class="flex justify-between items-start">
-                            <h3 id="team-name-${index}" class="text-xl font-bold text-gray-800">${team.name}</h3>
-                            <span class="font-semibold text-gray-700 whitespace-nowrap">Média: ${teamStats.avgSkill.toFixed(2)}</span>
-                        </div>
-                        <div class="flex flex-wrap gap-1">${positionCounts}</div>
-                        <div id="team-list-${index}" data-team-id="${index}" class="team-list min-h-[100px] bg-gray-50 rounded-md p-2 space-y-2"></div>
-                        <button class="generate-ai-name-btn w-full btn-ai font-bold py-2 px-4 rounded-md text-sm mt-2" data-team-index="${index}">
-                            <span>Gerar Nome com IA ✨</span>
-                            <div class="ai-loading-spinner hidden"></div>
-                        </button>
-                    `;
-                    teamsContainer.appendChild(teamCard);
-
-                    const teamListEl = document.getElementById(`team-list-${index}`);
-                    team.players.sort((a, b) => {
-                        const posOrder = {
-                            'DEF': 0,
-                            'MEI': 1,
-                            'ATA': 2
-                        };
-                        return posOrder[a.position] - posOrder[b.position] || b.skill - a
-                            .skill;
-                    }).forEach(player => {
-                        const playerEl = document.createElement('div');
-                        playerEl.className = 'player-item bg-white border border-gray-200 p-2 md:p-2.5 rounded-md flex justify-between items-center hover:border-gray-300';
-                        playerEl.dataset.playerId = player.id;
-
-                        const stats = currentRachaId ? getPlayerStats(currentRachaId, player.id) : { goals: 0, assists: 0 };
-
-                        playerEl.innerHTML = `
-                            <span class="truncate max-w-[55%] md:max-w-[60%]">${player.name}</span>
-                            <div class="flex items-center gap-1">
-                                <button class="stat-btn btn-goal text-xs px-2 py-1 rounded bg-emerald-600 text-white"
-                                        data-pid="${player.id}">+G</button>
-                                <span class="text-[11px] min-w-[20px] text-center" id="g-${player.id}">${stats.goals}</span>
-                                <button class="stat-btn btn-assist text-xs px-2 py-1 rounded bg-blue-600 text-white"
-                                        data-pid="${player.id}">+A</button>
-                                <span class="text-[11px] min-w-[20px] text-center" id="a-${player.id}">${stats.assists}</span>
-                                <span class="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 border border-gray-200 ml-1">
-                                ${showRatings ? `${player.skill.toFixed(1)} • ${player.position}` : `${player.position}`}
-                                </span>
-                            </div>
-                        `;
-
-                        document.getElementById(`team-list-${index}`).appendChild(playerEl);
-                    });
-                });
-                makeTeamsSortable();
-                addAiButtonListeners();
-                renderBalanceMetrics();
-            };
-
-            const makeTeamsSortable = () => {
-                document.querySelectorAll('.team-list').forEach(list => {
-                    new Sortable(list, {
-                        group: 'teams',
-                        animation: 150,
-                        ghostClass: 'sortable-ghost',
-                        onEnd: (evt) => {
-                            const playerId = parseInt(evt.item.dataset.playerId);
-                            const fromTeamId = parseInt(evt.from.dataset.teamId);
-                            const toTeamId = parseInt(evt.to.dataset.teamId);
-
-                            if (fromTeamId !== toTeamId) {
-                                let movedPlayer;
-                                teams[fromTeamId].players = teams[fromTeamId].players
-                                    .filter(p => {
-                                        if (p.id === playerId) {
-                                            movedPlayer = p;
-                                            return false;
-                                        }
-                                        return true;
-                                    });
-                                if (movedPlayer) {
-                                    teams[toTeamId].players.push(movedPlayer);
-                                }
-                                renderTeams();
-                            }
-                        }
-                    });
-                });
-            };
-
-
-            function runBalancingAlgorithm(playersToDraw) {
-                const numTeams = 4; // travado em 4
-                const teamSize = 6;
-                const formationKey = document.getElementById('formation').value;
-                const formation = formations[formationKey] || { DEF:2, MEI:2, ATA:2, total: 6 };
-                const weight = parseFloat(document.getElementById('balance-weight').value || '0.5');
-
-                // times
-                teams = Array.from({ length: numTeams }, (_, i) => ({ name: `Time ${i+1}`, players: [] }));
-                const needs = Array.from({ length: numTeams }, () => ({
-                    DEF: formation.DEF || 0,
-                    MEI: formation.MEI || 0,
-                    ATA: formation.ATA || 0
-                }));
-
-                // ordena por habilidade desc e cria tiers de tamanho = numTeams (4)
-                const pool = [...playersToDraw].sort((a, b) => b.skill - a.skill);
-                const tiers = [];
-                for (let i = 0; i < pool.length; i += numTeams) {
-                    tiers.push(pool.slice(i, i + numTeams)); // cada tier tem até 4 jogadores
-                }
-
-                // snake draft por tiers respeitando necessidades
-                let forward = true;
-                tiers.forEach((tier) => {
-                    const order = forward ? [...Array(numTeams).keys()] : [...Array(numTeams).keys()].reverse();
-                    order.forEach((ti) => {
-                    if (!tier.length) return;
-                    // tentar pegar do tier o jogador que melhor encaixa nas necessidades do time ti
-                    const pickIdx = bestPickFromTier(tier, needs[ti]);
-                    const picked = tier.splice(pickIdx, 1)[0];
-                    teams[ti].players.push(picked);
-                    // atualiza necessidades
-                    if (needs[ti][picked.position] > 0) {
-                        needs[ti][picked.position]--;
-                    } else if (Array.isArray(picked.secondaryPositions)) {
-                        for (const sec of picked.secondaryPositions) {
-                        if (needs[ti][sec] > 0) { needs[ti][sec]--; break; }
-                        }
-                    }
-                    });
-                    forward = !forward; // inverte a ordem a cada tier
-                });
-
-                // se por algum motivo faltou completar (ex.: formação custom), completa até 6 nivelando média
-                const leftovers = [];
-                teams.forEach(t => t.players.length > teamSize && leftovers.push(...t.players.splice(teamSize)));
-                const allAssigned = teams.reduce((acc, t) => acc + t.players.length, 0);
-                if (allAssigned < numTeams * teamSize) {
-                    const remaining = pool.filter(p => !teams.some(t => t.players.includes(p)));
-                    snakeDistributeRemaining(teams, remaining, teamSize);
-                }
-
-                resultsSection.classList.remove('hidden');
-                renderTeams();
-            }
-
-            // escolhe do TIER o melhor jogador para o time conforme necessidades
-            function bestPickFromTier(tier, needObj) {
-            // prioridade: primária em falta > secundária em falta > maior skill
-            let best = 0;
-            let bestScore = -Infinity;
-            const norm = (s) => (Math.max(1, Math.min(10, s)) - 1) / 9;
-
-            for (let i = 0; i < tier.length; i++) {
-                const p = tier[i];
-                const s = norm(p.skill);
-                let fit = 0;
-                if (needObj[p.position] > 0) fit = 1.0;
-                else if (Array.isArray(p.secondaryPositions)) {
-                for (const sec of p.secondaryPositions) {
-                    if (needObj[sec] > 0) { fit = Math.max(fit, 0.7); }
-                }
-                }
-                const score = 0.65 * fit + 0.35 * s; // pode ajustar pesos
-                if (score > bestScore) { bestScore = score; best = i; }
-            }
-            return best;
-            }
-
-            // mantém exatamente teamSize por time, sempre dando o próximo ao time de menor média
-            function snakeDistributeRemaining(teams, pool, teamSize = 6) {
-            let direction = 1;
-            while (pool.length) {
-                const pending = teams
-                .map((t, i) => ({ i, size: t.players.length, avg: avgSkill(t.players) }))
-                .filter(t => t.size < teamSize);
-
-                if (!pending.length) break;
-
-                const order = pending.sort((a, b) => (a.avg - b.avg) || (a.size - b.size)).map(o => o.i);
-                const seq = direction === 1 ? order : order.slice().reverse();
-
-                for (const ti of seq) {
-                if (!pool.length) break;
-                if (teams[ti].players.length < teamSize) {
-                    teams[ti].players.push(pool.shift());
-                }
-                }
-                direction *= -1;
-            }
-
-            function avgSkill(arr) {
-                if (!arr.length) return 0;
-                return arr.reduce((s, p) => s + p.skill, 0) / arr.length;
-            }
-            }// escolhe do TIER o melhor jogador para o time conforme necessidades
-            function bestPickFromTier(tier, needObj) {
-            // prioridade: primária em falta > secundária em falta > maior skill
-            let best = 0;
-            let bestScore = -Infinity;
-            const norm = (s) => (Math.max(1, Math.min(10, s)) - 1) / 9;
-
-            for (let i = 0; i < tier.length; i++) {
-                const p = tier[i];
-                const s = norm(p.skill);
-                let fit = 0;
-                if (needObj[p.position] > 0) fit = 1.0;
-                else if (Array.isArray(p.secondaryPositions)) {
-                for (const sec of p.secondaryPositions) {
-                    if (needObj[sec] > 0) { fit = Math.max(fit, 0.7); }
-                }
-                }
-                const score = 0.65 * fit + 0.35 * s; // pode ajustar pesos
-                if (score > bestScore) { bestScore = score; best = i; }
-            }
-            return best;
-            }
-
-            // mantém exatamente teamSize por time, sempre dando o próximo ao time de menor média
-            function snakeDistributeRemaining(teams, pool, teamSize = 6) {
-            let direction = 1;
-            while (pool.length) {
-                const pending = teams
-                .map((t, i) => ({ i, size: t.players.length, avg: avgSkill(t.players) }))
-                .filter(t => t.size < teamSize);
-
-                if (!pending.length) break;
-
-                const order = pending.sort((a, b) => (a.avg - b.avg) || (a.size - b.size)).map(o => o.i);
-                const seq = direction === 1 ? order : order.slice().reverse();
-
-                for (const ti of seq) {
-                if (!pool.length) break;
-                if (teams[ti].players.length < teamSize) {
-                    teams[ti].players.push(pool.shift());
-                }
-                }
-                direction *= -1;
-            }
-
-            function avgSkill(arr) {
-                if (!arr.length) return 0;
-                return arr.reduce((s, p) => s + p.skill, 0) / arr.length;
-            }
-            }
-
-            async function generateAiTeamName(button) {
-                const teamIndex = parseInt(button.dataset.teamIndex);
-                const team = teams[teamIndex];
-                const playerNames = team.players.map(p => p.name).join(', ');
-
-                button.querySelector('span').classList.add('hidden');
-                button.querySelector('.ai-loading-spinner').classList.remove('hidden');
-                button.disabled = true;
-
-                const prompt =
-                    `Crie um nome de time de futebol que seja criativo, divertido e um pouco "marrento". O nome deve ser em português do Brasil. O time é composto por estes jogadores: ${playerNames}. Responda apenas com o nome do time, sem nenhuma explicação adicional.`;
-
-                let chatHistory = [{
-                    role: "user",
-                    parts: [{
-                        text: prompt
-                    }]
-                }];
-                const payload = {
-                    contents: chatHistory
-                };
-                const apiKey = "";
-                const apiUrl =
-                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(payload)
-                    });
-                    const result = await response.json();
-
-                    if (result.candidates && result.candidates.length > 0 &&
-                        result.candidates[0].content && result.candidates[0].content.parts &&
-                        result.candidates[0].content.parts.length > 0) {
-                        let newName = result.candidates[0].content.parts[0].text.trim();
-                        newName = newName.replace(/["*]/g, '');
-
-                        teams[teamIndex].name = newName;
-                        document.getElementById(`team-name-${teamIndex}`).textContent = newName;
-                        updateBalanceChart();
-                    } else {
-                        throw new Error("Resposta da IA inválida.");
-                    }
-                } catch (error) {
-                    console.error("Erro ao chamar a API Gemini:", error);
-                    showMessage("Não foi possível gerar o nome. Tente novamente.", "error");
-                } finally {
-                    button.querySelector('span').classList.remove('hidden');
-                    button.querySelector('.ai-loading-spinner').classList.add('hidden');
-                    button.disabled = false;
-                }
-            }
-
-            function addAiButtonListeners() {
-                document.querySelectorAll('.generate-ai-name-btn').forEach(button => {
-                    button.addEventListener('click', () => generateAiTeamName(button));
-                });
-            }
-
-            const getSavedDraws = () => JSON.parse(localStorage.getItem('savedDraws')) || {};
-
-            // ==== Convocados (24) - salvar / carregar ====
-            const getSavedSquads = () => JSON.parse(localStorage.getItem('savedSquads')) || {};
-            const savedSquadsSelect = document.getElementById('saved-squads-select');
-            const saveSquadBtn = document.getElementById('save-squad-btn');
-            const loadSquadBtn = document.getElementById('load-squad-btn');
-            const deleteSquadBtn = document.getElementById('delete-squad-btn');
-            const squadNameInput = document.getElementById('squad-name');
-
-            function populateSquadsDropdown() {
-                if (!savedSquadsSelect) return;
-                const saved = getSavedSquads();
-                const names = Object.keys(saved);
-                savedSquadsSelect.innerHTML = '';
-                if (names.length === 0) {
-                    savedSquadsSelect.innerHTML = '<option disabled selected>Nenhum convocado salvo</option>';
-                    if (loadSquadBtn) loadSquadBtn.disabled = true;
-                    if (deleteSquadBtn) deleteSquadBtn.disabled = true;
-                } else {
-                    names.forEach(n => {
-                        const opt = document.createElement('option');
-                        opt.value = n;
-                        opt.textContent = n;
-                        savedSquadsSelect.appendChild(opt);
-                    });
-                    if (loadSquadBtn) loadSquadBtn.disabled = false;
-                    if (deleteSquadBtn) deleteSquadBtn.disabled = false;
-                }
-            }
-
-            if (saveSquadBtn) {
-                saveSquadBtn.addEventListener('click', () => {
-                    const ids = Array.from(selectedPlayerIds);
-                    if (ids.length !== 24) {
-                        showMessage(
-                            `Selecione exatamente 24 jogadores para salvar (atual: ${ids.length}).`,
-                            'error');
-                        return;
-                    }
-                    const name = (squadNameInput ?.value || '').trim();
-                    if (!name) {
-                        showMessage('Dê um nome aos 24 convocados antes de salvar.', 'error');
-                        return;
-                    }
-                    const saved = getSavedSquads();
-                    saved[name] = ids;
-                    localStorage.setItem('savedSquads', JSON.stringify(saved));
-                    populateSquadsDropdown();
-                    showMessage(`Convocados '${name}' salvos.`, 'success');
-                });
-            }
-
-            if (loadSquadBtn) {
-                loadSquadBtn.addEventListener('click', () => {
-                    const sel = savedSquadsSelect ?.value;
-                    if (!sel) {
-                        showMessage('Escolha um grupo salvo para carregar.', 'error');
-                        return;
-                    }
-                    const saved = getSavedSquads();
-                    const ids = saved[sel] || [];
-                    selectedPlayerIds = new Set(ids);
-                    renderPlayerList();
-                    renderSelectedPlayersList();
-                    showMessage(`Convocados '${sel}' carregados.`, 'success');
-                });
-            }
-
-            if (deleteSquadBtn) {
-                deleteSquadBtn.addEventListener('click', () => {
-                    const sel = savedSquadsSelect ?.value;
-                    if (!sel) return;
-                    const saved = getSavedSquads();
-                    if (confirm(`Apagar convocados salvos '${sel}'?`)) {
-                        delete saved[sel];
-                        localStorage.setItem('savedSquads', JSON.stringify(saved));
-                        populateSquadsDropdown();
-                        showMessage(`Convocados '${sel}' apagados.`, 'error');
-                    }
-                });
-            }
-
-
-            const populateSavesDropdown = () => {
-                const savedDraws = getSavedDraws();
-                const names = Object.keys(savedDraws);
-                savedDrawsSelect.innerHTML = '';
-                if (names.length === 0) {
-                    savedDrawsSelect.innerHTML =
-                        '<option disabled selected>Nenhum sorteio guardado</option>';
-                    loadDrawBtn.disabled = true;
-                    deleteDrawBtn.disabled = true;
-                } else {
-                    names.sort().forEach(name => {
-                        const option = document.createElement('option');
-                        option.value = name;
-                        option.textContent = name;
-                        savedDrawsSelect.appendChild(option);
-                    });
-                    loadDrawBtn.disabled = false;
-                    deleteDrawBtn.disabled = false;
-                }
-            };
-
-            saveDrawBtn.addEventListener('click', () => {
-                const name = saveNameInput.value.trim();
-                if (!name) {
-                    showMessage('Por favor, insira um nome para o sorteio.', 'error');
-                    return;
-                }
-                const savedDraws = getSavedDraws();
-                savedDraws[name] = {
-                    players: players,
-                    selectedPlayerIds: Array.from(selectedPlayerIds),
-                    config: {
-                        numTeams: document.getElementById('num-teams').value,
-                        formation: document.getElementById('formation').value,
-                        balanceWeight: document.getElementById('balance-weight').value
-                    }
-                };
-                localStorage.setItem('savedDraws', JSON.stringify(savedDraws));
-                saveNameInput.value = '';
-                populateSavesDropdown();
-                showMessage(`Sorteio '${name}' guardado com sucesso!`);
-            });
-
-            loadDrawBtn.addEventListener('click', () => {
-                const name = savedDrawsSelect.value;
-                if (!name) return;
-
-                const savedDraws = getSavedDraws();
-                const dataToLoad = savedDraws[name];
-
-                if (dataToLoad) {
-                    players = dataToLoad.players || [];
-                    selectedPlayerIds = new Set(dataToLoad.selectedPlayerIds || []);
-                    document.getElementById('num-teams').value = dataToLoad.config.numTeams;
-                    document.getElementById('formation').value = dataToLoad.config.formation;
-                    document.getElementById('balance-weight').value = dataToLoad.config.balanceWeight;
-
-                    saveAndRender();
-                    resultsSection.classList.add('hidden');
-                    showMessage(`Sorteio '${name}' carregado.`);
-                }
-            });
-
-            deleteDrawBtn.addEventListener('click', () => {
-                const name = savedDrawsSelect.value;
-                if (!name) return;
-
-                if (confirm(`Tem certeza que quer apagar o sorteio '${name}'?`)) {
-                    const savedDraws = getSavedDraws();
-                    delete savedDraws[name];
-                    localStorage.setItem('savedDraws', JSON.stringify(savedDraws));
-                    populateSavesDropdown();
-                    showMessage(`Sorteio '${name}' apagado.`, 'error');
-                }
-            });
-
-            if (openRachaBtn) {
-                openRachaBtn.addEventListener('click', () => {
-                    const id = rachaSelect?.value;
-                    if (!id) { showMessage('Escolha um racha para abrir.', 'error'); return; }
-                    openRachaById(id);
-                });
-            }
-
-            if (exportRachaBtn) {
-                exportRachaBtn.addEventListener('click', () => {
-                    if (!currentRachaId) {
-                    const id = rachaSelect?.value;
-                    if (id) currentRachaId = id; // se escolheu no dropdown, usa-o
-                    }
-                    exportCurrentRachaCSV();
-                });
-            }
-
-            if (deleteRachaBtn) {
-                deleteRachaBtn.addEventListener('click', () => {
-                    const id = rachaSelect?.value;
-                    if (!id) { showMessage('Escolha um racha para apagar.', 'error'); return; }
-                    if (confirm('Tem certeza que deseja apagar este racha (gols/assistências)?')) {
-                    deleteRachaById(id);
-                    }
-                });
-            }
-
-            function onTeamsClick(e) {
-                const goalBtn = e.target.closest('.btn-goal');
-                const assistBtn = e.target.closest('.btn-assist');
-                if (!goalBtn && !assistBtn) return;
-
-                ensureRacha();
-
-                const pid = parseInt((goalBtn || assistBtn).dataset.pid, 10);
-                const stats = getPlayerStats(currentRachaId, pid);
-
-                if (goalBtn) stats.goals = (stats.goals || 0) + 1;
-                if (assistBtn) stats.assists = (stats.assists || 0) + 1;
-
-                setPlayerStats(currentRachaId, pid, stats);
-
-                const gEl = document.getElementById(`g-${pid}`);
-                const aEl = document.getElementById(`a-${pid}`);
-                if (gEl) gEl.textContent = stats.goals || 0;
-                if (aEl) aEl.textContent = stats.assists || 0;
-            }
-            teamsContainer.addEventListener('click', onTeamsClick);
-
-            // Initial Load
-            players = JSON.parse(localStorage.getItem('masterPlayers')) || [];
-            populateSavesDropdown();
-            populateSquadsDropdown();
-            populateRachasDropdown();
-            saveAndRender();
-        });
-    </script>
+    <!-- Preview Notas Modal -->
+     <div id="preview-modal" class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl p-6 ring-1 ring-gray-100">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-semibold text-gray-800">Prévia das novas notas</h3>
+                <button id="preview-close-x" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+            </div>
+
+            <p id="preview-caption" class="text-sm text-gray-600 mb-3"></p>
+
+            <div class="max-h-[60vh] overflow-auto border rounded-lg">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-gray-50 sticky top-0">
+                        <tr>
+                            <th class="text-left px-3 py-2 w-[55%]">Jogador</th>
+                            <th class="text-right px-3 py-2">Antes</th>
+                            <th class="text-right px-3 py-2">Depois</th>
+                            <th class="text-right px-3 py-2">Δ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="preview-tbody" class="divide-y">
+                        <!-- linhas geradas via JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex justify-end gap-2 mt-4">
+                <button id="preview-cancel" class="px-3 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50">
+                    Cancelar
+                </button>
+                <button id="preview-apply" class="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 font-medium">
+                    Aplicar novas notas
+                </button>
+            </div>
+        </div>
+     </div>
+
+    <!-- JS do app (ESM) -->
+    <script type="module" src="src/main.js"></script>
 </body>
 
 </html>
