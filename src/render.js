@@ -254,7 +254,7 @@ export function renderTeams() {
           "player-item bg-white border border-gray-200 p-2 md:p-2.5 rounded-md flex justify-between items-center hover:border-gray-300";
         row.dataset.playerId = p.id;
         row.innerHTML = `
-        <span class="truncate max-w-[55%] md:max-w-[60%]">${p.name}</span>
+        <span class="player-handle truncate max-w-[55%] md:max-w-[60%] cursor-grab">${p.name}</span>
         <div class="flex items-center gap-1">
           <button class="stat-btn btn-goal-dec text-xs px-2 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200" data-pid="${p.id}">−G</button>
           <button class="stat-btn btn-goal text-xs px-2 py-1 rounded bg-emerald-600 text-white" data-pid="${p.id}">+G</button>
@@ -263,8 +263,8 @@ export function renderTeams() {
           <button class="stat-btn btn-assist text-xs px-2 py-1 rounded bg-blue-600 text-white" data-pid="${p.id}">+A</button>
           <span class="text-[11px] min-w-[20px] text-center" id="a-${p.id}">${stats.assists}</span>
           <span class="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 border border-gray-200 ml-1">
-+            ${state.showRatings ? `${p.skill.toFixed(1)} • ${p.position}` : `${p.position}`}
-+          </span>
+            ${state.showRatings ? `${p.skill.toFixed(1)} • ${p.position}` : `${p.position}`}
+          </span>
         </div>`;
         listEl.appendChild(row);
       });
@@ -277,10 +277,11 @@ export function renderTeams() {
   state.sortables = [];
 
   document.querySelectorAll(".team-list").forEach((list) => {
-    const s = new Sortable(list, {
+    if (list._sortable) return;
+    list._sortable = new Sortable(list, {
       group: { name: "teams", pull: true, put: true },
       animation: 150,
-      draggable: ".player-item",
+      handle: ".player-handle",
       ghostClass: "sortable-ghost",
       filter: ".stat-btn",
       preventOnFilter: true,

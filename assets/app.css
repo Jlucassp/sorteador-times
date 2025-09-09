@@ -462,3 +462,8 @@ select[multiple] {
 #preview-modal table tbody tr td:first-child {
     white-space: normal;
 }
+
+/* melhora toque em mobile nos botões de scout (evita atraso e conflitos) */
+.stat-btn {
+    touch-action: manipulation;
+}
